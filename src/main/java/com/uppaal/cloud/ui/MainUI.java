@@ -118,7 +118,7 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
 
         JPanel debugPanel = new JPanel();
         runButton = new JButton("Load and show the XML model");
-        runButton.addActionListener(e -> getXML());
+        runButton.addActionListener(e -> textArea.setText(getXML()));
         debugPanel.add(runButton);
 
         traceButton = new JButton("Load and show a trace file");
@@ -267,6 +267,12 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
     }
 
     private void setTrace() {
+        int option = JOptionPane.showConfirmDialog(getRootPane(),"Loading a trace will overwrite existing once. Are you sure?");
+        if(option != JOptionPane.YES_OPTION){
+            textArea.setText("Trace discarded");
+            return;
+        }
+
         String res;
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {

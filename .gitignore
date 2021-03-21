@@ -28,6 +28,7 @@ build
 
 bin/
 !gradle/wrapper/gradle-wrapper.jar
+!external/*
 
 bla.xml
 jobber.xml

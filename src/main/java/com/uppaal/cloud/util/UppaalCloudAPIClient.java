@@ -8,6 +8,7 @@ public class UppaalCloudAPIClient {
     private String username;
     private String password;
     private String token;
+    private String lastPushedJob;
     private Gson gson = new Gson();
     public static final MediaType JSON
             = MediaType.get("application/json; charset=utf-8");
@@ -84,7 +85,6 @@ public class UppaalCloudAPIClient {
 
     public String pushJob(UppaalCloudJob job) {
         // Push a job to the cloud
-        String jobId = "UNKNOWN";
         RequestBody body = RequestBody.create(gson.toJson(job), JSON);
         try {
             Request request = new Request.Builder()
@@ -95,11 +95,11 @@ public class UppaalCloudAPIClient {
 
             Response response = client.newCall(request).execute();
             // Would probably have the extra quotes
-            jobId = response.body().string();
+            this.lastPushedJob = response.body().string();
         } catch(Exception e) {
         }
 
-        return jobId;
+        return this.lastPushedJob;
     }
 }
 

@@ -2,10 +2,14 @@ package com.uppaal.cloud.ui;
 
 import com.uppaal.cloud.util.UppaalCloudAPIClient;
 import com.uppaal.cloud.util.UppaalCloudJob;
+import com.uppaal.engine.Engine;
 import com.uppaal.engine.Parser;
 import com.uppaal.engine.Problem;
+import com.uppaal.model.LayoutVisitor;
 import com.uppaal.model.core2.Document;
+import com.uppaal.model.core2.PrototypeDocument;
 import com.uppaal.model.io2.XMLWriter;
+import com.uppaal.model.io2.XMLReader;
 import com.uppaal.model.system.UppaalSystem;
 import com.uppaal.model.system.symbolic.SymbolicTrace;
 import com.uppaal.plugin.Plugin;
@@ -130,6 +134,13 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
             textArea.setText(apiClient.getToken());
         });
         debugPanel.add(showToken);
+
+        JButton loadJob = new JButton("Load last job");
+        loadJob.addActionListener(e -> {
+            loadLastJob();
+        });
+        debugPanel.add(loadJob);
+
         add(debugPanel);
 
         JButton getJobs = new JButton("Get last job");
@@ -280,6 +291,39 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
             SymbolicTrace st = new Parser(IOUtils.toInputStream(res, StandardCharsets.UTF_8)).parseXTRTrace(systemr.get());
 
             tracer.set(st);
+        } catch (Exception e) {
+            res = e.getMessage();
+        }
+
+        textArea.setText(res);
+    }
+
+    private void loadLastJob() {
+        int option = JOptionPane.showConfirmDialog(getRootPane(),"Loading a model will overwrite existing once. Are you sure?");
+        if(option != JOptionPane.YES_OPTION){
+            textArea.setText("Model not loaded");
+            return;
+        }
+
+        List<UppaalCloudJob> jobs = apiClient.getJobs();
+        UppaalCloudJob job = jobs.get(jobs.size() - 1);
+
+        String res = "All good";
+        try {
+            PrototypeDocument pd = new PrototypeDocument();
+            Document doc = new XMLReader(IOUtils.toInputStream(job.xml, StandardCharsets.UTF_8)).parse(pd);
+            doc.acceptSafe(new LayoutVisitor());
+
+//            ArrayList<Problem> problems = new ArrayList<Problem>();
+//            Engine engine = new Engine();
+//            UppaalSystem sys = engine.getSystem(doc, problems);
+//            if (!problems.isEmpty()) {
+//                textArea.setText("There are problems with the document");
+//                return;
+//            }
+
+            // Try replacing the systemr instead
+            docr.set(doc);
         } catch (Exception e) {
             res = e.getMessage();
         }

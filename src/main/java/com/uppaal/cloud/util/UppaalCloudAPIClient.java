@@ -5,20 +5,20 @@ import okhttp3.*;
 import com.google.gson.Gson;
 
 public class UppaalCloudAPIClient {
-    private String username;
+    private String email;
     private String password;
     private String token;
     private String lastPushedJob;
     private Gson gson = new Gson();
     public static final MediaType JSON
             = MediaType.get("application/json; charset=utf-8");
-    public static final String API_URL = "http://127.0.0.1:3000";
+    public static final String API_URL = "http://127.0.0.1:8080";
 
     private OkHttpClient client = new OkHttpClient();
 
-    public UppaalCloudAPIClient(String user, String pass) {
+    public UppaalCloudAPIClient(String email, String pass) {
         // ? Read and save token in a file
-        this.username = user;
+        this.email = email;
         this.password = pass;
     }
 
@@ -29,39 +29,39 @@ public class UppaalCloudAPIClient {
     public UppaalCloudAPIClient() {
     }
 
-    public void setCredentials(String user, String pass) {
-        this.username = user;
+    public void setCredentials(String email, String pass) {
+        this.email = email;
         this.password = pass;
     }
 
     public String getToken() {
         return this.token;
     }
+    public String getEmail() {
+        return this.email;
+    }
 
-    public boolean login() {
+    public void login() throws Exception {
         // HTTP request to login and get token
         // if token exists, verify it
         // else login and get new token
-        boolean logged = true;
 
-        try {
-            LoginCredentials cred = new LoginCredentials(this.username, this.password);
-            RequestBody body = RequestBody.create(gson.toJson(cred), JSON);
-            Request request = new Request.Builder()
-                    .url(API_URL+"/auth/login")
-                    .post(body)
-                    .build();
+        LoginCredentials cred = new LoginCredentials(this.email, this.password);
+        RequestBody body = RequestBody.create(gson.toJson(cred), JSON);
+        Request request = new Request.Builder()
+                .url(API_URL+"/v1/auth/login")
+                .post(body)
+                .build();
 
-            Response response = client.newCall(request).execute();
-            String serverRsp = response.body().string();
+        Response response = client.newCall(request).execute();
+        String serverRsp = response.body().string();
+        LoginResponse rsp = gson.fromJson(serverRsp, LoginResponse.class);
 
-            LoginResponse rsp = gson.fromJson(serverRsp, LoginResponse.class);
+        if (response.code() != 200) {
+            throw new Exception(rsp.message);
+        } else {
             this.token = rsp.token;
-        } catch(Exception e) {
-            logged = false;
         }
-
-        return logged;
     }
 
     public List<UppaalCloudJob> getJobs() {
@@ -69,7 +69,7 @@ public class UppaalCloudAPIClient {
         List<UppaalCloudJob> res = java.util.Collections.emptyList();
         try {
             Request request = new Request.Builder()
-                    .url(API_URL+"/job")
+                    .url(API_URL+"/v1/job")
                     .addHeader("X-Access-Token", this.token)
                     .build();
 
@@ -88,7 +88,7 @@ public class UppaalCloudAPIClient {
         RequestBody body = RequestBody.create(gson.toJson(job), JSON);
         try {
             Request request = new Request.Builder()
-                    .url(API_URL+"/job")
+                    .url(API_URL+"/v1/job")
                     .addHeader("X-Access-Token", this.token)
                     .post(body)
                     .build();
@@ -107,8 +107,8 @@ class LoginCredentials {
     String email;
     String password;
 
-    public LoginCredentials(String user, String pass) {
-        this.email = user;
+    public LoginCredentials(String email, String pass) {
+        this.email = email;
         this.password = pass;
     }
 }

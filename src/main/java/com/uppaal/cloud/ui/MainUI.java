@@ -33,7 +33,7 @@ import java.util.List;
 // import com.uppaal.model.core2.*;
 
 @SuppressWarnings("serial")
-public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyChangeListener {
+public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyChangeListener, Callback {
     protected static final String SELECT = "com/uppaal/resource/images/selectedQuery.gif";
     protected static final String OKAY = "com/uppaal/resource/images/queryOkay.gif";
     protected static final String NOT_OKAY = "com/uppaal/resource/images/queryNotOkay.gif";
@@ -65,20 +65,16 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
 
     private static Repository<UppaalSystem> systemr;
 
-    private JPanel credentialsPanel;
+    private LoginView loginPanel;
+    private JobsView jobsPanel;
 
     private JButton runButton;
     private JButton traceButton;
-    private JButton loginButton;
     private JTextArea textArea;
-    private JTextField userNameField;
-    private JTextField passwordField;
     private JTextField jobNameField;
     private JTextField jobDescriptionField;
     private boolean selected;
     private double zoom;
-    private String username;
-    private String password;
 
     private UppaalCloudAPIClient apiClient = new UppaalCloudAPIClient();
 
@@ -99,86 +95,16 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
-        credentialsPanel = new JPanel();
-        credentialsPanel.add(new JLabel("Username: "));
-        userNameField = new JTextField("");
-        userNameField.setPreferredSize(new Dimension(128, userNameField.getPreferredSize().height));
-        credentialsPanel.add(userNameField);
+        // Create login layout
+        loginPanel = new LoginView(this.apiClient, this);
+        add(loginPanel);
 
-        credentialsPanel.add(new JLabel("Password: "));
-        passwordField = new JPasswordField("");
-        passwordField.setPreferredSize(new Dimension(128, passwordField.getPreferredSize().height));
-        credentialsPanel.add(passwordField);
-
-        loginButton = new JButton("Login");
-        loginButton.addActionListener(e -> login());
-        credentialsPanel.add(loginButton);
-        add(credentialsPanel);
-
-        textArea = new JTextArea(4, 20);
-        JScrollPane scrollPane = new JScrollPane(textArea);
-        textArea.setEditable(false);
-        add(textArea);
-
-        JPanel debugPanel = new JPanel();
-        runButton = new JButton("Load and show the XML model");
-        runButton.addActionListener(e -> textArea.setText(getXML()));
-        debugPanel.add(runButton);
-
-        traceButton = new JButton("Load and show a trace file");
-        traceButton.addActionListener(e -> setTrace());
-        debugPanel.add(traceButton);
-
-        JButton showToken = new JButton("Show current token");
-        showToken.addActionListener(e -> {
-            textArea.setText(apiClient.getToken());
-        });
-        debugPanel.add(showToken);
-
-        JButton loadJob = new JButton("Load last job");
-        loadJob.addActionListener(e -> {
-            loadLastJob();
-        });
-        debugPanel.add(loadJob);
-
-        add(debugPanel);
-
-        JButton getJobs = new JButton("Get last job");
-        getJobs.addActionListener(e -> {
-            List<UppaalCloudJob> jobs = apiClient.getJobs();
-            UppaalCloudJob job = jobs.get(jobs.size() - 1);
-            String out = "Total jobs: " + jobs.size() +
-                    "\nName: " + job.name +
-                    "\nDescription: " + job.description +
-                    "\nstatus: " + job.status +
-                    "\nfinished on " + job.end_time;
-            textArea.setText(out);
-        });
-        add(getJobs);
-
-        JPanel jobsPanel = new JPanel();
-        jobsPanel.add(new JLabel("Job name: "));
-        jobNameField = new JTextField("");
-        jobNameField.setPreferredSize(new Dimension(128, jobNameField.getPreferredSize().height));
-        jobsPanel.add(jobNameField);
-
-        jobsPanel.add(new JLabel("Job description: "));
-        jobDescriptionField = new JTextField("");
-        jobDescriptionField.setPreferredSize(new Dimension(128, jobDescriptionField.getPreferredSize().height));
-        jobsPanel.add(jobDescriptionField);
-
-        JButton pushJob = new JButton("Run current job in the cloud");
-        pushJob.addActionListener(e -> {
-            UppaalCloudJob job = new UppaalCloudJob();
-            job.name = jobNameField.getText();
-            job.description = jobDescriptionField.getText();
-            job.xml = getXML();
-            String jobId = apiClient.pushJob(job);
-            textArea.setText("Job ID: "+jobId);
-        });
-        jobsPanel.add(pushJob);
-
+        // Create jobs layout
+        jobsPanel = new JobsView(this.apiClient, this, docr);
         add(jobsPanel);
+
+        // Show default behavior
+        this.callback(UiAction.LOGGED_OUT);
 
         docr.addListener(this);
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
@@ -263,20 +189,6 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
         return new String(Files.readAllBytes(Paths.get("/home/tsvetomir/projects/uppaal/uppaal64-4.1.24/demo/to_test_train_gate.xtr")));
     }
 
-    private String getXML() {
-        Document d = docr.get();
-        String res;
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
-            new XMLWriter(out).visitDocument(d);
-            res = new String(out.toByteArray(), StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            res = e.getMessage();
-        }
-        return res;
-    }
-
     private void setTrace() {
         int option = JOptionPane.showConfirmDialog(getRootPane(),"Loading a trace will overwrite existing once. Are you sure?");
         if(option != JOptionPane.YES_OPTION){
@@ -331,22 +243,6 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
         textArea.setText(res);
     }
 
-    private void login() {
-        username = userNameField.getText();
-        password = passwordField.getText();
-        textArea.setText("Username: " + username + " password: " + password);
-
-        apiClient.setCredentials(username, password);
-        if(apiClient.login()) {
-            // Hide the credentials panel
-            credentialsPanel.setVisible(false);
-            // TODO: show panel again if a request fails
-            textArea.setText("Token is: "+apiClient.getToken());
-        } else {
-            // Failed to login
-        }
-    }
-
     private Thread checkThread;
     private Thread dialogThread;
 
@@ -363,5 +259,23 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         setActive(selected);
+    }
+
+    @Override
+    public void callback(UiAction action) {
+        switch (action) {
+            case LOGGED_IN:
+                // Switch to Jobs view
+                loginPanel.setVisible(false);
+                jobsPanel.setVisible(true);
+                jobsPanel.refreshView();
+                break;
+            case LOGGED_OUT:
+                // Hide jobs view and show credentials view
+                jobsPanel.setVisible(false);
+                loginPanel.setVisible(true);
+                loginPanel.refreshView();
+                break;
+        }
     }
 }

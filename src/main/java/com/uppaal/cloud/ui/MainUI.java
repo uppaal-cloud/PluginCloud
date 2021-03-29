@@ -68,11 +68,6 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
     private LoginView loginPanel;
     private JobsView jobsPanel;
 
-    private JButton runButton;
-    private JButton traceButton;
-    private JTextArea textArea;
-    private JTextField jobNameField;
-    private JTextField jobDescriptionField;
     private boolean selected;
     private double zoom;
 
@@ -192,7 +187,7 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
     private void setTrace() {
         int option = JOptionPane.showConfirmDialog(getRootPane(),"Loading a trace will overwrite existing once. Are you sure?");
         if(option != JOptionPane.YES_OPTION){
-            textArea.setText("Trace discarded");
+//            textArea.setText("Trace discarded");
             return;
         }
 
@@ -207,13 +202,13 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
             res = e.getMessage();
         }
 
-        textArea.setText(res);
+//        textArea.setText(res);
     }
 
     private void loadLastJob() {
         int option = JOptionPane.showConfirmDialog(getRootPane(),"Loading a model will overwrite existing once. Are you sure?");
         if(option != JOptionPane.YES_OPTION){
-            textArea.setText("Model not loaded");
+//            textArea.setText("Model not loaded");
             return;
         }
 
@@ -240,7 +235,7 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
             res = e.getMessage();
         }
 
-        textArea.setText(res);
+//        textArea.setText(res);
     }
 
     private Thread checkThread;

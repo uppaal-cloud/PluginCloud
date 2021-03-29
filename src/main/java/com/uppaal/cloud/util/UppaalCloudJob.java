@@ -16,16 +16,4 @@ public class UppaalCloudJob {
     public Date end_time;
 }
 
-class UppaalCloudJobQuery {
-    public String id;
-    public String formula;
-    public String result;
-    public String trace;
-}
-
-class UppaalCloudJobUsage {
-    public Number cpu;
-    public Number memory;
-}
-
 class UppaalCloudJobsResponse extends ArrayList<UppaalCloudJob> {}

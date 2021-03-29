@@ -8,6 +8,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import java.util.List;
+import java.util.Objects;
 
 public class RemoteJobsView extends JPanel {
     private final UppaalCloudAPIClient apiClient;
@@ -29,6 +30,7 @@ public class RemoteJobsView extends JPanel {
         tblModel.addColumn("Job Name");
         tblModel.addColumn("Started On");
         tblModel.addColumn("Status");
+        tblModel.addColumn("Verified queries");
 
         table = new JTable(tblModel){
             public boolean isCellEditable(int row, int column){
@@ -41,6 +43,7 @@ public class RemoteJobsView extends JPanel {
                 // Row index starts from 0
                 int rowIdx = table.getSelectedRow();
                 UppaalCloudJob job = jobs.get(jobs.size()-1-rowIdx);
+
                 JOptionPane.showConfirmDialog(getRootPane(),"Job name: " + job.name + " status: " + job.status);
             }
         });
@@ -57,7 +60,13 @@ public class RemoteJobsView extends JPanel {
         for(int i = (jobs.size()-1); i >= 0; i--){
             // Show newest first
             UppaalCloudJob job = jobs.get(i);
-            tblModel.addRow(new Object[]{id, job.name, job.start_time, job.status});
+            // Get number of queries and number of satisfied queries
+            int numQueries = job.queries.size();
+            int numVerifiedQueries = (int) job.queries.stream()
+                    .filter(query -> !Objects.isNull(query.result) &&
+                            query.result.equals("satisfied"))
+                    .count();
+            tblModel.addRow(new Object[]{id, job.name, job.start_time, job.status, numVerifiedQueries+"/"+numQueries});
             id++;
         }
     }

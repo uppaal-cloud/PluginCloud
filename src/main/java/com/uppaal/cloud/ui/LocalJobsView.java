@@ -65,6 +65,8 @@ public class LocalJobsView extends JPanel {
         job.description = jobDescriptionField.getText();
         job.xml = getXML();
         String jobId = apiClient.pushJob(job);
+        // Add a small delay
+        try { Thread.sleep(100); } catch (Exception e) {};
         jobPushedCallback.callback(UiAction.JOB_PUSHED);
     }
 

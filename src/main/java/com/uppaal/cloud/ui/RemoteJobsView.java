@@ -42,6 +42,10 @@ public class RemoteJobsView extends JPanel {
             public void valueChanged(ListSelectionEvent event) {
                 // Row index starts from 0
                 int rowIdx = table.getSelectedRow();
+                if(rowIdx == -1) {
+                    // No selected row
+                    return;
+                }
                 UppaalCloudJob job = jobs.get(jobs.size()-1-rowIdx);
 
                 JOptionPane.showConfirmDialog(getRootPane(),"Job name: " + job.name + " status: " + job.status);

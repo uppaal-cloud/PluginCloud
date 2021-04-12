@@ -2,64 +2,179 @@ package com.uppaal.cloud.ui;
 
 import com.uppaal.cloud.util.UppaalCloudAPIClient;
 import com.uppaal.cloud.util.UppaalCloudJob;
+import com.uppaal.cloud.util.UppaalCloudJobQuery;
+import com.uppaal.engine.Parser;
+import com.uppaal.model.system.UppaalSystem;
+import com.uppaal.model.system.symbolic.SymbolicTrace;
+import com.uppaal.plugin.Repository;
+import org.apache.commons.io.IOUtils;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
 public class RemoteJobsView extends JPanel {
     private final UppaalCloudAPIClient apiClient;
-    private List<UppaalCloudJob> jobs;
-    private JLabel total = new JLabel("");
-    private JTable table;
-    private final DefaultTableModel tblModel;
+    private Repository<UppaalSystem> systemr;
+    private Repository<SymbolicTrace> tracer;
+    private SymbolicTrace symTrace;
+    private final JToggleButton remoteButton;
 
-    public RemoteJobsView(UppaalCloudAPIClient client) {
+    private List<UppaalCloudJob> jobs;
+    private UppaalCloudJob selectedJob;
+
+    private final JLabel total = new JLabel("");
+
+    private final JTable table;
+    private final DefaultTableModel tableModel;
+    private final JScrollPane tablePane;
+
+    private final JTable resultTable;
+    private final DefaultTableModel resultTableModel;
+    private final JScrollPane resultTablePane;
+
+    private final JPanel statsPanel = new JPanel();
+    private final JLabel jobName = new JLabel("");
+    private final JLabel jobDescription = new JLabel("");
+    private final JLabel cpuUsage = new JLabel("");
+    private final JLabel ramUsage = new JLabel("");
+    private final JLabel duration = new JLabel("");
+
+    public RemoteJobsView(UppaalCloudAPIClient client, JToggleButton btn,
+                          Repository<UppaalSystem> sys, Repository<SymbolicTrace> trace) {
         super();
         this.apiClient = client;
+        this.remoteButton = btn;
+        this.systemr = sys;
+        this.tracer = trace;
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-
         add(total);
 
-        tblModel = new DefaultTableModel();
-        tblModel.addColumn("ID");
-        tblModel.addColumn("Job Name");
-        tblModel.addColumn("Started On");
-        tblModel.addColumn("Status");
-        tblModel.addColumn("Verified queries");
+        statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.Y_AXIS));
+        statsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        statsPanel.add(jobName);
+        statsPanel.add(jobDescription);
+        statsPanel.add(cpuUsage);
+        statsPanel.add(ramUsage);
+        statsPanel.add(duration);
+        statsPanel.setVisible(false);
+        add(statsPanel);
 
-        table = new JTable(tblModel){
+        tableModel = new DefaultTableModel();
+        tableModel.addColumn("ID");
+        tableModel.addColumn("Job Name");
+        tableModel.addColumn("Started On");
+        tableModel.addColumn("Status");
+        tableModel.addColumn("Verified queries");
+
+        table = new JTable(tableModel){
             public boolean isCellEditable(int row, int column){
                 return false;
             }
         };
-        table.setFillsViewportHeight(true);
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
-            public void valueChanged(ListSelectionEvent event) {
-                // Row index starts from 0
-                int rowIdx = table.getSelectedRow();
-                if(rowIdx == -1) {
-                    // No selected row
-                    return;
-                }
-                UppaalCloudJob job = jobs.get(jobs.size()-1-rowIdx);
 
-                JOptionPane.showConfirmDialog(getRootPane(),"Job name: " + job.name + " status: " + job.status);
+        // Center render columns
+        DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer();
+        cellRenderer.setHorizontalAlignment(JLabel.CENTER);
+        table.getColumnModel().getColumn(0).setCellRenderer(cellRenderer);
+        table.getColumnModel().getColumn(3).setCellRenderer(cellRenderer);
+        table.getColumnModel().getColumn(4).setCellRenderer(cellRenderer);
+
+        // set the column width for each column
+        table.getColumnModel().getColumn(0).setMaxWidth(40); // ID
+        table.getColumnModel().getColumn(1).setPreferredWidth(70); // Name
+        table.getColumnModel().getColumn(2).setPreferredWidth(70); // Date
+        table.getColumnModel().getColumn(3).setPreferredWidth(40); // Status
+        table.getColumnModel().getColumn(4).setPreferredWidth(20); // Verified queries
+
+        table.setFocusable(false);
+        table.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent me) {
+                if (me.getClickCount() == 2) {
+                    if(!tablePane.isVisible()) {
+                        return;
+                    }
+                    // Row index starts from 0
+                    int rowIdx = table.getSelectedRow();
+                    if(rowIdx == -1) {
+                        // No selected row
+                        return;
+                    }
+                    selectedJob = jobs.get(jobs.size()-1-rowIdx);
+                    switchToResult();
+                }
             }
         });
-        JScrollPane sp = new JScrollPane(table);
-        add(sp);
+
+        tablePane = new JScrollPane(table);
+        add(tablePane);
+
+        // **************************************************************
+        // Setup result table
+        resultTableModel = new DefaultTableModel();
+        resultTableModel.addColumn("ID");
+        resultTableModel.addColumn("Formula");
+        resultTableModel.addColumn("Result");
+        resultTableModel.addColumn("Trace");
+
+        resultTable = new JTable(resultTableModel){
+            public boolean isCellEditable(int row, int column){
+                return false;
+            }
+        };
+
+        // Center some columns
+        resultTable.getColumnModel().getColumn(0).setCellRenderer(cellRenderer);
+        resultTable.getColumnModel().getColumn(2).setCellRenderer(cellRenderer);
+        resultTable.getColumnModel().getColumn(3).setCellRenderer(cellRenderer);
+
+        resultTable.getColumnModel().getColumn(0).setMaxWidth(40); // ID
+        resultTable.getColumnModel().getColumn(1).setPreferredWidth(150); // Formula
+        resultTable.getColumnModel().getColumn(2).setMaxWidth(70); // Result
+        resultTable.getColumnModel().getColumn(3).setMaxWidth(70); // Trace
+
+        resultTable.setFocusable(false);
+        resultTable.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent me) {
+                if (me.getClickCount() == 2) {     // To detect double click events
+                    // Row index starts from 0
+                    int rowIdx = resultTable.getSelectedRow();
+                    if(rowIdx == -1) {
+                        // No selected row
+                        return;
+                    }
+                    String tr = selectedJob.queries.get(rowIdx).trace;
+                    if(Objects.isNull(tr) || tr.isEmpty()) {
+                        JOptionPane.showMessageDialog(getRootPane(), "Query result does not have a trace", "Info", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        setTrace(tr);
+                    }
+                }
+            }
+        });
+
+        resultTablePane = new JScrollPane(resultTable);
+        resultTablePane.setVisible(false);
+        add(resultTablePane);
     }
 
     public void refreshView() {
+        tablePane.setVisible(true);
+        resultTablePane.setVisible(false);
+        statsPanel.setVisible(false);
+
         jobs = apiClient.getJobs();
         total.setText("Total jobs: " + jobs.size());
         // Clean-up the table
-        tblModel.setRowCount(0);
+        tableModel.setRowCount(0);
         int id = 1;
         for(int i = (jobs.size()-1); i >= 0; i--){
             // Show newest first
@@ -70,8 +185,66 @@ public class RemoteJobsView extends JPanel {
                     .filter(query -> !Objects.isNull(query.result) &&
                             query.result.equals("satisfied"))
                     .count();
-            tblModel.addRow(new Object[]{id, job.name, job.start_time, job.status, numVerifiedQueries+"/"+numQueries});
+            tableModel.addRow(new Object[]
+                    {id, job.name, job.start_time, job.status, numVerifiedQueries+"/"+numQueries});
             id++;
+        }
+
+        // Re-render
+        revalidate();
+        repaint();
+    }
+
+    private void switchToResult() {
+        // Hide current table
+        tablePane.setVisible(false);
+
+        // Clean-up the table
+        resultTableModel.setRowCount(0);
+        for(int i = 0; i < selectedJob.queries.size(); i++){
+            UppaalCloudJobQuery q = selectedJob.queries.get(i);
+            resultTableModel.addRow(new Object[]
+                    {q.id, q.formula, q.result, (!Objects.isNull(q.trace) && !q.trace.isEmpty())});
+        }
+        resultTablePane.setVisible(true);
+
+        // De-select remote button
+        remoteButton.setSelected(false);
+
+        // Get elapsed time
+        Date endDate = new Date();
+        if(!Objects.isNull(selectedJob.end_time)) {
+            endDate = selectedJob.end_time;
+        }
+
+        long diffInMillies = Math.abs(endDate.getTime() - selectedJob.start_time.getTime());
+        String elapsedTime = (diffInMillies / 1000.0) + "";
+
+        // Setup stats
+        jobName.setText("Job name: " + selectedJob.name);
+        jobDescription.setText("Job description: " + selectedJob.description);
+        cpuUsage.setText("CPU usage: " + selectedJob.usage.cpu + " ms");
+        ramUsage.setText("RAM usage: " + selectedJob.usage.ram + " bytes");
+        duration.setText("Duration: " + elapsedTime + " s");
+        statsPanel.setVisible(true);
+
+        // Re-render
+        revalidate();
+        repaint();
+    }
+
+    private void setTrace(String tr) {
+        int option = JOptionPane.showConfirmDialog(getRootPane(),"Loading a trace will overwrite existing once. Are you sure?");
+        if(option != JOptionPane.YES_OPTION){
+            return;
+        }
+
+        try {
+            symTrace = new Parser(IOUtils.toInputStream(tr, StandardCharsets.UTF_8)).parseXTRTrace(systemr.get());
+            // Known issue - tracer tab needs to be active at least once before replacing
+            tracer.set(symTrace);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(getRootPane(),"Failed to load trace: " + e.getMessage(),"Alert", JOptionPane.WARNING_MESSAGE);
         }
     }
 }

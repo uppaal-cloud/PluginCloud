@@ -8,6 +8,7 @@ import com.uppaal.plugin.Repository;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.nio.charset.StandardCharsets;
 
@@ -24,16 +25,16 @@ public class LocalJobsView extends JPanel {
         this.docr = doc;
         this.jobPushedCallback = callback;
 
-//        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setLayout(new FlowLayout());
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setAlignmentX(Component.CENTER_ALIGNMENT);
-        setAlignmentY(Component.CENTER_ALIGNMENT);
 
-        setPreferredSize(new Dimension(700, 180));
-        setMaximumSize(new Dimension(700, 180));
+        Border border = BorderFactory.createLineBorder(Color.black);
+        setBorder(border);
+
+        JLabel icon = new JLabel(new ImageIcon(getClass().getResource("/cloud.png")));
+        add(icon);
 
         add(new JLabel("This tab allows you to push the current model and queries to UPPAAL Cloud."));
-        add(new JSeparator());
 
         JPanel jobNameRow = new JPanel();
         jobNameRow.add(new JLabel("Job name:"));
@@ -45,7 +46,7 @@ public class LocalJobsView extends JPanel {
         JPanel jobDescriptionRow = new JPanel();
         jobDescriptionRow.add(new JLabel("Job Description:"));
         jobDescriptionField = new JTextField("");
-        jobDescriptionField.setPreferredSize(new Dimension(400, 30));
+        jobDescriptionField.setPreferredSize(new Dimension(350, 30));
         jobDescriptionRow.add(jobDescriptionField);
         add(jobDescriptionRow);
 

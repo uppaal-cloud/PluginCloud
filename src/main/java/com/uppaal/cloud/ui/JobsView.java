@@ -2,6 +2,8 @@ package com.uppaal.cloud.ui;
 
 import com.uppaal.cloud.util.UppaalCloudAPIClient;
 import com.uppaal.model.core2.Document;
+import com.uppaal.model.system.UppaalSystem;
+import com.uppaal.model.system.symbolic.SymbolicTrace;
 import com.uppaal.plugin.Repository;
 
 import javax.swing.*;
@@ -13,18 +15,19 @@ public class JobsView extends JPanel implements Callback {
 
     private final JToggleButton setLocalButton;
     private final JToggleButton setRemoteButton;
-    private JLabel emailLabel = new JLabel("");
+    private final JLabel emailLabel = new JLabel("");
 
     private final LocalJobsView localJobsPanel;
     private final RemoteJobsView remoteJobsPanel;
 
-    public JobsView(UppaalCloudAPIClient client, Callback callback, Repository<Document> docr) {
+    public JobsView(UppaalCloudAPIClient client, Callback callback,
+                    Repository<Document> docr,
+                    Repository<UppaalSystem> systemr,
+                    Repository<SymbolicTrace> tracer) {
         super();
         this.apiClient = client;
         this.loggedOutCallback = callback;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setAlignmentX(Component.CENTER_ALIGNMENT);
-        setAlignmentY(Component.CENTER_ALIGNMENT);
 
         // Create header {email} logout button {toggle}
         JPanel header = new JPanel();
@@ -42,12 +45,12 @@ public class JobsView extends JPanel implements Callback {
         s.setOrientation(SwingConstants.HORIZONTAL);
         header.add(s);
 
-        setLocalButton = new JToggleButton("Local");
+        setLocalButton = new JToggleButton("Publish job");
         setLocalButton.addActionListener(e -> toggleView(false));
         setLocalButton.setSelected(true);
         header.add(setLocalButton);
 
-        setRemoteButton = new JToggleButton("Remote");
+        setRemoteButton = new JToggleButton("Results");
         setRemoteButton.addActionListener(e -> toggleView(true));
         setRemoteButton.setSelected(false);
         header.add(setRemoteButton);
@@ -59,7 +62,7 @@ public class JobsView extends JPanel implements Callback {
         localJobsPanel = new LocalJobsView(this.apiClient, docr, this);
         add(localJobsPanel);
 
-        remoteJobsPanel = new RemoteJobsView(this.apiClient);
+        remoteJobsPanel = new RemoteJobsView(this.apiClient, setRemoteButton, systemr, tracer);
         add(remoteJobsPanel);
 
         // Set default behavior
@@ -97,10 +100,8 @@ public class JobsView extends JPanel implements Callback {
 
     @Override
     public void callback(UiAction action) {
-        switch (action) {
-            case JOB_PUSHED:
-                toggleView(true);
-                break;
+        if (action == UiAction.JOB_PUSHED) {
+            toggleView(true);
         }
     }
 }

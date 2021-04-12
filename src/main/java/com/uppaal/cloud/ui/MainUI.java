@@ -95,7 +95,7 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
         add(loginPanel);
 
         // Create jobs layout
-        jobsPanel = new JobsView(this.apiClient, this, docr);
+        jobsPanel = new JobsView(this.apiClient, this, docr, systemr, tracer);
         add(jobsPanel);
 
         // Show default behavior
@@ -187,7 +187,6 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
     private void setTrace() {
         int option = JOptionPane.showConfirmDialog(getRootPane(),"Loading a trace will overwrite existing once. Are you sure?");
         if(option != JOptionPane.YES_OPTION){
-//            textArea.setText("Trace discarded");
             return;
         }
 
@@ -201,14 +200,11 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
         } catch (Exception e) {
             res = e.getMessage();
         }
-
-//        textArea.setText(res);
     }
 
     private void loadLastJob() {
         int option = JOptionPane.showConfirmDialog(getRootPane(),"Loading a model will overwrite existing once. Are you sure?");
         if(option != JOptionPane.YES_OPTION){
-//            textArea.setText("Model not loaded");
             return;
         }
 
@@ -220,6 +216,7 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
             PrototypeDocument pd = new PrototypeDocument();
             Document doc = new XMLReader(IOUtils.toInputStream(job.xml, StandardCharsets.UTF_8)).parse(pd);
             doc.acceptSafe(new LayoutVisitor());
+            docr.set(doc);
 
 //            ArrayList<Problem> problems = new ArrayList<Problem>();
 //            Engine engine = new Engine();
@@ -230,7 +227,6 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
 //            }
 
             // Try replacing the systemr instead
-            docr.set(doc);
         } catch (Exception e) {
             res = e.getMessage();
         }

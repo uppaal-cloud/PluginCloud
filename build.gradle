@@ -33,6 +33,7 @@ task fatJar(type: Jar) {
                 'Class-Path': '../uppaal.jar')
     }
     archiveBaseName = "$project.name"
+    from sourceSets.main.output.resourcesDir
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     } {

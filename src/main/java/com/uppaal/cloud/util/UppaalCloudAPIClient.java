@@ -12,7 +12,7 @@ public class UppaalCloudAPIClient {
     private Gson gson = new Gson();
     public static final MediaType JSON
             = MediaType.get("application/json; charset=utf-8");
-    public static final String API_URL = "http://127.0.0.1:8080";
+    public static final String API_URL = "http://uppaal.mywire.org";
 
     private OkHttpClient client = new OkHttpClient();
 
@@ -34,18 +34,11 @@ public class UppaalCloudAPIClient {
         this.password = pass;
     }
 
-    public String getToken() {
-        return this.token;
-    }
     public String getEmail() {
         return this.email;
     }
 
     public void login() throws Exception {
-        // HTTP request to login and get token
-        // if token exists, verify it
-        // else login and get new token
-
         LoginCredentials cred = new LoginCredentials(this.email, this.password);
         RequestBody body = RequestBody.create(gson.toJson(cred), JSON);
         Request request = new Request.Builder()
@@ -65,7 +58,6 @@ public class UppaalCloudAPIClient {
     }
 
     public List<UppaalCloudJob> getJobs() {
-        // return list of CloudJob types
         List<UppaalCloudJob> res = java.util.Collections.emptyList();
         try {
             Request request = new Request.Builder()
@@ -94,7 +86,6 @@ public class UppaalCloudAPIClient {
                     .build();
 
             Response response = client.newCall(request).execute();
-            // Would probably have the extra quotes
             this.lastPushedJob = response.body().string();
         } catch(Exception e) {
         }

@@ -25,7 +25,6 @@ public class RemoteJobsView extends JPanel {
     private Repository<UppaalSystem> systemr;
     private Repository<SymbolicTrace> tracer;
     private SymbolicTrace symTrace;
-    private final JToggleButton remoteButton;
 
     private List<UppaalCloudJob> jobs;
     private UppaalCloudJob selectedJob;
@@ -41,30 +40,25 @@ public class RemoteJobsView extends JPanel {
     private final JScrollPane resultTablePane;
 
     private final JPanel statsPanel = new JPanel();
-    private final JLabel jobName = new JLabel("");
-    private final JLabel jobDescription = new JLabel("");
-    private final JLabel cpuUsage = new JLabel("");
-    private final JLabel ramUsage = new JLabel("");
-    private final JLabel duration = new JLabel("");
+    private final JLabel statsList = new JLabel("");
+    private final JButton listJobs = new JButton("Back to all jobs");
 
-    public RemoteJobsView(UppaalCloudAPIClient client, JToggleButton btn,
-                          Repository<UppaalSystem> sys, Repository<SymbolicTrace> trace) {
+    public RemoteJobsView(UppaalCloudAPIClient client, Repository<UppaalSystem> sys,
+                          Repository<SymbolicTrace> trace) {
         super();
         this.apiClient = client;
-        this.remoteButton = btn;
         this.systemr = sys;
         this.tracer = trace;
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         add(total);
 
-        statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.Y_AXIS));
+        listJobs.addActionListener(e -> refreshView());
+
+        statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.X_AXIS));
         statsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        statsPanel.add(jobName);
-        statsPanel.add(jobDescription);
-        statsPanel.add(cpuUsage);
-        statsPanel.add(ramUsage);
-        statsPanel.add(duration);
+        statsPanel.add(statsList);
+        statsPanel.add(listJobs);
         statsPanel.setVisible(false);
         add(statsPanel);
 
@@ -168,6 +162,7 @@ public class RemoteJobsView extends JPanel {
 
     public void refreshView() {
         tablePane.setVisible(true);
+        total.setVisible(true);
         resultTablePane.setVisible(false);
         statsPanel.setVisible(false);
 
@@ -208,9 +203,6 @@ public class RemoteJobsView extends JPanel {
         }
         resultTablePane.setVisible(true);
 
-        // De-select remote button
-        remoteButton.setSelected(false);
-
         // Get elapsed time
         Date endDate = new Date();
         if(!Objects.isNull(selectedJob.end_time)) {
@@ -221,12 +213,25 @@ public class RemoteJobsView extends JPanel {
         String elapsedTime = (diffInMillies / 1000.0) + "";
 
         // Setup stats
-        jobName.setText("Job name: " + selectedJob.name);
-        jobDescription.setText("Job description: " + selectedJob.description);
-        cpuUsage.setText("CPU usage: " + selectedJob.usage.cpu + " ms");
-        ramUsage.setText("RAM usage: " + selectedJob.usage.ram + " bytes");
-        duration.setText("Duration: " + elapsedTime + " s");
+        String formattedText = "<html>" +
+                "<style> " +
+                "table{margin: 10px 30px; font-size: 10px}" +
+                ".c1{color: #777777}" +
+                "tr{padding: 0; margin: 0; height: 10px; line-height: 10px;}" +
+                "td{padding: 0; margin: 0; height: 10px; line-height: 10px;}" +
+                "</style> " +
+                "<table>" +
+                "<tr><td class='c1'>Job name:</td><td>"+selectedJob.name+"</td></tr>" +
+                "<tr><td class='c1'>Job description:</td><td>"+selectedJob.description+"</td></tr>" +
+                "<tr><td class='c1'>Status:</td><td>"+selectedJob.status+"</td></tr>" +
+                "<tr><td class='c1'>CPU usage:</td><td>"+selectedJob.usage.cpu+" ms</td></tr>" +
+                "<tr><td class='c1'>RAM usage:</td><td>"+selectedJob.usage.ram+" bytes</td></tr>" +
+                "<tr><td class='c1'>Duration:</td><td>"+elapsedTime+" s</td></tr>" +
+                "</table></html>";
+
+        statsList.setText(formattedText);
         statsPanel.setVisible(true);
+        total.setVisible(false);
 
         // Re-render
         revalidate();

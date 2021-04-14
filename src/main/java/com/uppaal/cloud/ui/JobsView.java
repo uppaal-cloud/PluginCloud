@@ -37,6 +37,7 @@ public class JobsView extends JPanel implements Callback {
 
         header.add(emailLabel);
         JButton signOutButton = new JButton("Sign Out");
+        signOutButton.setFocusable(false);
         signOutButton.addActionListener(e -> signOut());
         header.add(signOutButton);
 
@@ -46,11 +47,13 @@ public class JobsView extends JPanel implements Callback {
         header.add(s);
 
         setLocalButton = new JToggleButton("Publish job");
+        setLocalButton.setFocusable(false);
         setLocalButton.addActionListener(e -> toggleView(false));
         setLocalButton.setSelected(true);
         header.add(setLocalButton);
 
         setRemoteButton = new JToggleButton("Results");
+        setRemoteButton.setFocusable(false);
         setRemoteButton.addActionListener(e -> toggleView(true));
         setRemoteButton.setSelected(false);
         header.add(setRemoteButton);
@@ -62,7 +65,7 @@ public class JobsView extends JPanel implements Callback {
         localJobsPanel = new LocalJobsView(this.apiClient, docr, this);
         add(localJobsPanel);
 
-        remoteJobsPanel = new RemoteJobsView(this.apiClient, setRemoteButton, systemr, tracer);
+        remoteJobsPanel = new RemoteJobsView(this.apiClient, systemr, tracer);
         add(remoteJobsPanel);
 
         // Set default behavior

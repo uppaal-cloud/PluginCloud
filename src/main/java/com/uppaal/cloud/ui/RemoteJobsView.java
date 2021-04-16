@@ -41,7 +41,11 @@ public class RemoteJobsView extends JPanel {
 
     private final JPanel statsPanel = new JPanel();
     private final JLabel statsList = new JLabel("");
+
+    private final JPanel statsButtonPanel = new JPanel();
     private final JButton listJobs = new JButton("Back to all jobs");
+    private final JButton refreshJob = new JButton("Refresh job");
+    private final JButton deleteJob = new JButton("Delete job");
 
     public RemoteJobsView(UppaalCloudAPIClient client, Repository<UppaalSystem> sys,
                           Repository<SymbolicTrace> trace) {
@@ -54,11 +58,32 @@ public class RemoteJobsView extends JPanel {
         add(total);
 
         listJobs.addActionListener(e -> refreshView());
+        refreshJob.addActionListener(e -> {
+            String jobId = selectedJob._id;
+            selectedJob = apiClient.getJob(jobId);
+            switchToResult();
+        });
+        deleteJob.addActionListener(e -> {
+            String jobId = selectedJob._id;
+            apiClient.removeJob(jobId);
+            // Add a small delay
+            try { Thread.sleep(100); } catch (Exception ex) {};
+            refreshView();
+        });
+
+        listJobs.setFocusable(false);
+        refreshJob.setFocusable(false);
+        deleteJob.setFocusable(false);
 
         statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.X_AXIS));
         statsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         statsPanel.add(statsList);
-        statsPanel.add(listJobs);
+
+        statsButtonPanel.setLayout(new BoxLayout(statsButtonPanel, BoxLayout.Y_AXIS));
+        statsButtonPanel.add(listJobs);
+        statsButtonPanel.add(refreshJob);
+        statsButtonPanel.add(deleteJob);
+        statsPanel.add(statsButtonPanel);
         statsPanel.setVisible(false);
         add(statsPanel);
 
@@ -103,16 +128,7 @@ public class RemoteJobsView extends JPanel {
                         return;
                     }
                     selectedJob = jobs.get(jobs.size()-1-rowIdx);
-                    // Initialize selected job details
-                    if(Objects.isNull(selectedJob.usage)) {
-                        selectedJob.usage = new UppaalCloudJobUsage();
-                        selectedJob.usage.cpu = 0;
-                        selectedJob.usage.ram = 0;
-                    }
 
-                    if(Objects.isNull(selectedJob.start_time)) {
-                        selectedJob.start_time = new Date();
-                    }
                     switchToResult();
                 }
             }
@@ -201,6 +217,17 @@ public class RemoteJobsView extends JPanel {
     }
 
     private void switchToResult() {
+        // Initialize selected job details
+        if(Objects.isNull(selectedJob.usage)) {
+            selectedJob.usage = new UppaalCloudJobUsage();
+            selectedJob.usage.cpu = 0;
+            selectedJob.usage.ram = 0;
+        }
+
+        if(Objects.isNull(selectedJob.start_time)) {
+            selectedJob.start_time = new Date();
+        }
+
         // Hide current table
         tablePane.setVisible(false);
 

@@ -75,6 +75,24 @@ public class UppaalCloudAPIClient {
         return res;
     }
 
+    public UppaalCloudJob getJob(String id) {
+        UppaalCloudJob res = new UppaalCloudJob();
+        try {
+            Request request = new Request.Builder()
+                    .url(API_URL+"/v1/job/"+id)
+                    .addHeader("X-Access-Token", this.token)
+                    .build();
+
+            Response response = client.newCall(request).execute();
+            String serverRsp = response.body().string();
+
+            res = gson.fromJson(serverRsp, UppaalCloudJob.class);
+        } catch(Exception e) {
+        }
+
+        return res;
+    }
+
     public String pushJob(UppaalCloudJob job) {
         // Push a job to the cloud
         RequestBody body = RequestBody.create(gson.toJson(job), JSON);
@@ -91,6 +109,25 @@ public class UppaalCloudAPIClient {
         }
 
         return this.lastPushedJob;
+    }
+
+    public UppaalCloudJob removeJob(String id) {
+        UppaalCloudJob res = new UppaalCloudJob();
+        try {
+            Request request = new Request.Builder()
+                    .url(API_URL+"/v1/job/"+id)
+                    .delete()
+                    .addHeader("X-Access-Token", this.token)
+                    .build();
+
+            Response response = client.newCall(request).execute();
+            String serverRsp = response.body().string();
+
+            res = gson.fromJson(serverRsp, UppaalCloudJob.class);
+        } catch(Exception e) {
+        }
+
+        return res;
     }
 }
 

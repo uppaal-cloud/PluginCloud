@@ -3,6 +3,7 @@ package com.uppaal.cloud.ui;
 import com.uppaal.cloud.util.UppaalCloudAPIClient;
 import com.uppaal.cloud.util.UppaalCloudJob;
 import com.uppaal.cloud.util.UppaalCloudJobQuery;
+import com.uppaal.cloud.util.UppaalCloudJobUsage;
 import com.uppaal.engine.Parser;
 import com.uppaal.model.system.UppaalSystem;
 import com.uppaal.model.system.symbolic.SymbolicTrace;
@@ -24,7 +25,6 @@ public class RemoteJobsView extends JPanel {
     private final UppaalCloudAPIClient apiClient;
     private Repository<UppaalSystem> systemr;
     private Repository<SymbolicTrace> tracer;
-    private SymbolicTrace symTrace;
 
     private List<UppaalCloudJob> jobs;
     private UppaalCloudJob selectedJob;
@@ -103,6 +103,16 @@ public class RemoteJobsView extends JPanel {
                         return;
                     }
                     selectedJob = jobs.get(jobs.size()-1-rowIdx);
+                    // Initialize selected job details
+                    if(Objects.isNull(selectedJob.usage)) {
+                        selectedJob.usage = new UppaalCloudJobUsage();
+                        selectedJob.usage.cpu = 0;
+                        selectedJob.usage.ram = 0;
+                    }
+
+                    if(Objects.isNull(selectedJob.start_time)) {
+                        selectedJob.start_time = new Date();
+                    }
                     switchToResult();
                 }
             }
@@ -131,9 +141,9 @@ public class RemoteJobsView extends JPanel {
         resultTable.getColumnModel().getColumn(3).setCellRenderer(cellRenderer);
 
         resultTable.getColumnModel().getColumn(0).setMaxWidth(40); // ID
-        resultTable.getColumnModel().getColumn(1).setPreferredWidth(150); // Formula
-        resultTable.getColumnModel().getColumn(2).setMaxWidth(70); // Result
-        resultTable.getColumnModel().getColumn(3).setMaxWidth(70); // Trace
+        resultTable.getColumnModel().getColumn(1).setPreferredWidth(350); // Formula
+        resultTable.getColumnModel().getColumn(2).setPreferredWidth(20); // Result
+        resultTable.getColumnModel().getColumn(3).setPreferredWidth(20); // Trace
 
         resultTable.setFocusable(false);
         resultTable.addMouseListener(new MouseAdapter() {
@@ -245,7 +255,7 @@ public class RemoteJobsView extends JPanel {
         }
 
         try {
-            symTrace = new Parser(IOUtils.toInputStream(tr, StandardCharsets.UTF_8)).parseXTRTrace(systemr.get());
+            SymbolicTrace symTrace = new Parser(IOUtils.toInputStream(tr, StandardCharsets.UTF_8)).parseXTRTrace(systemr.get());
             // Known issue - tracer tab needs to be active at least once before replacing
             tracer.set(symTrace);
         } catch (Exception e) {

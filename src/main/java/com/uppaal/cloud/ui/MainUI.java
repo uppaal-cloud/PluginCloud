@@ -123,6 +123,7 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
     @Override
     public void setActive(boolean selected) {
         this.selected = selected;
+        jobsPanel.setActive(selected);
     }
 
     private void loadLastJob() {

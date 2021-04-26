@@ -29,6 +29,7 @@ public class RemoteJobsView extends JPanel {
 
     private List<UppaalCloudJob> jobs;
     private UppaalCloudJob selectedJob;
+    private boolean shouldRun = false;
 
     private final JLabel total = new JLabel("");
 
@@ -48,6 +49,9 @@ public class RemoteJobsView extends JPanel {
     private final JButton refreshJob = new JButton("Refresh job");
     private final JButton deleteJob = new JButton("Delete job");
 
+    private Thread refreshSelectedJobThread;
+    private Thread refreshRemoteJobsThread;
+
     public RemoteJobsView(UppaalCloudAPIClient client, Repository<UppaalSystem> sys,
                           Repository<SymbolicTrace> trace) {
         super();
@@ -60,8 +64,7 @@ public class RemoteJobsView extends JPanel {
 
         listJobs.addActionListener(e -> refreshView());
         refreshJob.addActionListener(e -> {
-            String jobId = selectedJob._id;
-            selectedJob = apiClient.getJob(jobId);
+            refreshSelectedJob();
             switchToResult();
         });
         deleteJob.addActionListener(e -> {
@@ -196,6 +199,8 @@ public class RemoteJobsView extends JPanel {
     }
 
     public void refreshView() {
+        // Entrypoint of this pane
+        this.shouldRun = true;
         tablePane.setVisible(true);
         total.setVisible(true);
         resultTablePane.setVisible(false);
@@ -223,9 +228,74 @@ public class RemoteJobsView extends JPanel {
         // Re-render
         revalidate();
         repaint();
+
+        // Start refresh thread
+        setRemoteJobsRefresh(true);
+        setSelectedJobRefresh(false);
+    }
+
+    public void setJobRefresh(boolean shouldRun) {
+        this.shouldRun = shouldRun;
+        if(!shouldRun) {
+            setSelectedJobRefresh(false);
+            setRemoteJobsRefresh(false);
+        }
+    }
+
+    private void setSelectedJobRefresh(boolean running) {
+        if(running) {
+            if (refreshSelectedJobThread != null && refreshSelectedJobThread.isAlive())
+                return;
+
+            refreshSelectedJobThread = new Thread(() -> {
+                while(true) {
+                    // Wait 5 seconds
+                    try {
+                        Thread.sleep(5000);
+                        refreshSelectedJob();
+                        switchToResult();
+                    } catch (Exception e) {
+                        // Interrupted
+                        return;
+                    };
+                }
+            });
+            refreshSelectedJobThread.start();
+        } else {
+            if (refreshSelectedJobThread != null && refreshSelectedJobThread.isAlive()) {
+                refreshSelectedJobThread.interrupt();
+            }
+        }
+    }
+
+    private void setRemoteJobsRefresh(boolean running) {
+        if(running) {
+            if (refreshRemoteJobsThread != null && refreshRemoteJobsThread.isAlive())
+                return;
+
+            refreshRemoteJobsThread = new Thread(() -> {
+                while(true) {
+                    try {
+                        // Wait 5 seconds
+                        Thread.sleep(5000);
+                        refreshView();
+                    } catch (Exception e) {
+                        // Interrupted
+                        return;
+                    };
+                }
+            });
+            refreshRemoteJobsThread.start();
+        } else {
+            if (refreshRemoteJobsThread != null && refreshRemoteJobsThread.isAlive()) {
+                refreshRemoteJobsThread.interrupt();
+            }
+        }
     }
 
     private void switchToResult() {
+        setRemoteJobsRefresh(false);
+
         // Initialize selected job details
         if(Objects.isNull(selectedJob.usage)) {
             selectedJob.usage = new UppaalCloudJobUsage();
@@ -282,6 +352,14 @@ public class RemoteJobsView extends JPanel {
         // Re-render
         revalidate();
         repaint();
+
+        // Start refresh thread
+        setSelectedJobRefresh(true);
+    }
+
+    private void refreshSelectedJob() {
+        String jobId = selectedJob._id;
+        selectedJob = apiClient.getJob(jobId);
     }
 
     private void setTrace(String tr) {

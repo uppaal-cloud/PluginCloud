@@ -19,6 +19,7 @@ public class JobsView extends JPanel implements Callback {
 
     private final LocalJobsView localJobsPanel;
     private final RemoteJobsView remoteJobsPanel;
+    private boolean selected = false;
 
     public JobsView(UppaalCloudAPIClient client, Callback callback,
                     Repository<Document> docr,
@@ -77,6 +78,14 @@ public class JobsView extends JPanel implements Callback {
 
     public void refreshView() {
         emailLabel.setText(apiClient.getEmail());
+    }
+
+    public void setActive(boolean selected) {
+        this.selected = selected;
+        if(!selected) {
+            // Stop any refresh activity
+            this.remoteJobsPanel.setJobRefresh(false);
+        }
     }
 
     private void signOut() {

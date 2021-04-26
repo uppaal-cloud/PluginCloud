@@ -25,36 +25,53 @@ public class LocalJobsView extends JPanel {
         this.docr = doc;
         this.jobPushedCallback = callback;
 
-//        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setLayout(new GridLayout(5,1));
-        setAlignmentX(Component.CENTER_ALIGNMENT);
-        setAlignmentY(Component.CENTER_ALIGNMENT);
-
-        Border border = BorderFactory.createLineBorder(Color.black);
-        setBorder(border);
+        setLayout(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
 
         JLabel icon = new JLabel(new ImageIcon(getClass().getResource("/cloud.png")));
-        add(icon);
+        c.gridx = 1;
+        c.gridy = 0;
+        c.gridwidth = 1;
+        add(icon, c);
 
-        add(new JLabel("This tab allows you to push the current model and queries to UPPAAL Cloud."));
+        c.gridx = 0;
+        c.gridy = 1;
+        c.gridwidth = 3;
+        JLabel info = new JLabel("This tab allows you to push the current model and queries to UPPAAL Cloud.");
+        info.setPreferredSize(new Dimension(info.getPreferredSize().width, 30));
+        add(info, c);
 
-        JPanel jobNameRow = new JPanel();
-        jobNameRow.add(new JLabel("Name:"));
+        c.gridx = 0;
+        c.gridy = 2;
+        c.gridwidth = 1;
+        add(new JLabel("Name:", JLabel.LEFT), c);
         jobNameField = new JTextField("");
-        jobNameField.setPreferredSize(new Dimension(128, 30));
-        jobNameRow.add(jobNameField);
-        add(jobNameRow);
+        jobNameField.setPreferredSize(new Dimension(350, 30));
 
-        JPanel jobDescriptionRow = new JPanel();
-        jobDescriptionRow.add(new JLabel("Description:"));
+        c.gridx = 1;
+        c.gridy = 2;
+        c.gridwidth = 1;
+        add(jobNameField, c);
+
+        c.gridx = 0;
+        c.gridy = 3;
+        c.gridwidth = 1;
+        add(new JLabel("Description:", JLabel.LEFT), c);
         jobDescriptionField = new JTextField("");
         jobDescriptionField.setPreferredSize(new Dimension(350, 30));
-        jobDescriptionRow.add(jobDescriptionField);
-        add(jobDescriptionRow);
+
+        c.gridx = 1;
+        c.gridy = 3;
+        c.gridwidth = 1;
+        add(jobDescriptionField, c);
 
         JButton pushJob = new JButton("Push to cloud");
         pushJob.addActionListener(e -> pushJob());
-        add(pushJob);
+
+        c.gridx = 1;
+        c.gridy = 4;
+        c.gridwidth = 1;
+        add(pushJob, c);
     }
 
     public void refreshView() {

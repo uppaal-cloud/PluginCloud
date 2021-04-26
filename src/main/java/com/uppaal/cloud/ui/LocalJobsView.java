@@ -25,8 +25,10 @@ public class LocalJobsView extends JPanel {
         this.docr = doc;
         this.jobPushedCallback = callback;
 
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+//        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setLayout(new GridLayout(5,1));
         setAlignmentX(Component.CENTER_ALIGNMENT);
+        setAlignmentY(Component.CENTER_ALIGNMENT);
 
         Border border = BorderFactory.createLineBorder(Color.black);
         setBorder(border);
@@ -37,14 +39,14 @@ public class LocalJobsView extends JPanel {
         add(new JLabel("This tab allows you to push the current model and queries to UPPAAL Cloud."));
 
         JPanel jobNameRow = new JPanel();
-        jobNameRow.add(new JLabel("Job name:"));
+        jobNameRow.add(new JLabel("Name:"));
         jobNameField = new JTextField("");
         jobNameField.setPreferredSize(new Dimension(128, 30));
         jobNameRow.add(jobNameField);
         add(jobNameRow);
 
         JPanel jobDescriptionRow = new JPanel();
-        jobDescriptionRow.add(new JLabel("Job Description:"));
+        jobDescriptionRow.add(new JLabel("Description:"));
         jobDescriptionField = new JTextField("");
         jobDescriptionField.setPreferredSize(new Dimension(350, 30));
         jobDescriptionRow.add(jobDescriptionField);

@@ -11,6 +11,7 @@ import com.uppaal.plugin.Repository;
 import org.apache.commons.io.IOUtils;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -76,13 +77,21 @@ public class RemoteJobsView extends JPanel {
         deleteJob.setFocusable(false);
 
         statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.X_AXIS));
+
         statsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        statsPanel.setAlignmentY(Component.TOP_ALIGNMENT);
         statsPanel.add(statsList);
 
-        statsButtonPanel.setLayout(new BoxLayout(statsButtonPanel, BoxLayout.Y_AXIS));
+        GridLayout gl = new GridLayout(3,1);
+        gl.setVgap(5);
+        statsButtonPanel.setLayout(gl);
+        statsButtonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 20));
+        statsButtonPanel.setMaximumSize(new Dimension(statsButtonPanel.getSize().width, 90));
+
         statsButtonPanel.add(listJobs);
         statsButtonPanel.add(refreshJob);
         statsButtonPanel.add(deleteJob);
+
         statsPanel.add(statsButtonPanel);
         statsPanel.setVisible(false);
         add(statsPanel);
@@ -252,10 +261,10 @@ public class RemoteJobsView extends JPanel {
         // Setup stats
         String formattedText = "<html>" +
                 "<style> " +
-                "table{margin: 10px 30px; font-size: 10px}" +
+                "table{margin: 10px 15px; font-size: 10px}" +
                 ".c1{color: #777777}" +
-                "tr{padding: 0; margin: 0; height: 10px; line-height: 10px;}" +
-                "td{padding: 0; margin: 0; height: 10px; line-height: 10px;}" +
+                "tr{padding: 0; margin: 0; height: 8px; line-height: 8px;}" +
+                "td{padding: 0; margin: 0 10px; height: 8px; line-height: 8px;}" +
                 "</style> " +
                 "<table>" +
                 "<tr><td class='c1'>Job name:</td><td>"+selectedJob.name+"</td></tr>" +
@@ -286,7 +295,12 @@ public class RemoteJobsView extends JPanel {
             // Known issue - tracer tab needs to be active at least once before replacing
             tracer.set(symTrace);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(getRootPane(),"Failed to load trace: " + e.getMessage(),"Alert", JOptionPane.WARNING_MESSAGE);
+            if(e.getMessage() == null)
+            {
+                JOptionPane.showMessageDialog(getRootPane(), "Please open the Simulator tab and load the trace again", "Alert", JOptionPane.WARNING_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(getRootPane(), "Failed to load trace: " + e.getMessage(), "Alert", JOptionPane.WARNING_MESSAGE);
+            }
         }
     }
 }

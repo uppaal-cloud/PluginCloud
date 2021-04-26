@@ -32,19 +32,7 @@ public class JobsView extends JPanel implements Callback {
         // Create header {email} logout button {toggle}
         JPanel header = new JPanel();
         header.setLayout(new GridLayout(1,2));
-        header.setPreferredSize(new Dimension(750, 30));
-        header.setMaximumSize(new Dimension(header.getPreferredSize().width, 30));
-
-        header.add(emailLabel);
-        JButton signOutButton = new JButton("Sign Out");
-        signOutButton.setFocusable(false);
-        signOutButton.addActionListener(e -> signOut());
-        header.add(signOutButton);
-
-        // Horizontal spacer
-        JSeparator s = new JSeparator();
-        s.setOrientation(SwingConstants.HORIZONTAL);
-        header.add(s);
+        header.setMaximumSize(new Dimension(header.getMaximumSize().width, 35));
 
         setLocalButton = new JToggleButton("Publish job");
         setLocalButton.setFocusable(false);
@@ -58,9 +46,23 @@ public class JobsView extends JPanel implements Callback {
         setRemoteButton.setSelected(false);
         header.add(setRemoteButton);
 
+        // Horizontal spacer
+        JSeparator s = new JSeparator();
+        s.setOrientation(SwingConstants.HORIZONTAL);
+        header.add(s);
+
+        header.add(emailLabel);
+        JButton signOutButton = new JButton("Sign Out");
+        signOutButton.setFocusable(false);
+        signOutButton.addActionListener(e -> signOut());
+        header.add(signOutButton);
+//        header.setBorder(BorderFactory.createLineBorder(Color.black));
+
         add(header);
         // Vertical separator
-        add(new JSeparator());
+        JSeparator js = new JSeparator();
+        js.setMaximumSize(new Dimension(js.getPreferredSize().width, 1));
+        add(js);
 
         localJobsPanel = new LocalJobsView(this.apiClient, docr, this);
         add(localJobsPanel);

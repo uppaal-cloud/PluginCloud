@@ -59,20 +59,21 @@ public class RemoteJobsView extends JPanel {
         this.systemr = sys;
         this.tracer = trace;
 
+        setDoubleBuffered(true);
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         add(total);
 
-        listJobs.addActionListener(e -> refreshView());
+        listJobs.addActionListener(e -> refreshView(true));
         refreshJob.addActionListener(e -> {
             refreshSelectedJob();
-            switchToResult();
+            switchToResult(false);
         });
         deleteJob.addActionListener(e -> {
             String jobId = selectedJob._id;
             apiClient.removeJob(jobId);
             // Add a small delay
-            try { Thread.sleep(100); } catch (Exception ex) {};
-            refreshView();
+            try { Thread.sleep(100); } catch (Exception ex) {}
+            refreshView(true);
         });
 
         listJobs.setFocusable(false);
@@ -141,7 +142,7 @@ public class RemoteJobsView extends JPanel {
                     }
                     selectedJob = jobs.get(jobs.size()-1-rowIdx);
 
-                    switchToResult();
+                    switchToResult(true);
                 }
             }
         });
@@ -198,7 +199,7 @@ public class RemoteJobsView extends JPanel {
         add(resultTablePane);
     }
 
-    public void refreshView() {
+    public void refreshView(boolean rerender) {
         // Entrypoint of this pane
         this.shouldRun = true;
         tablePane.setVisible(true);
@@ -226,8 +227,10 @@ public class RemoteJobsView extends JPanel {
         }
 
         // Re-render
-        revalidate();
-        repaint();
+        if(rerender) {
+            revalidate();
+            repaint();
+        }
 
         // Start refresh thread
         setRemoteJobsRefresh(true);
@@ -251,9 +254,12 @@ public class RemoteJobsView extends JPanel {
                 while(true) {
                     // Wait 5 seconds
                     try {
+                        if(selectedJob.status.equals("done")) {
+                            return;
+                        }
                         Thread.sleep(5000);
                         refreshSelectedJob();
-                        switchToResult();
+                        switchToResult(false);
                     } catch (Exception e) {
                         // Interrupted
                         return;
@@ -276,9 +282,9 @@ public class RemoteJobsView extends JPanel {
             refreshRemoteJobsThread = new Thread(() -> {
                 while(true) {
                     try {
-                        // Wait 5 seconds
-                        Thread.sleep(5000);
-                        refreshView();
+                        // Wait 10 seconds
+                        Thread.sleep(10000);
+                        refreshView(false);
                     } catch (Exception e) {
                         // Interrupted
                         return;
@@ -293,7 +299,7 @@ public class RemoteJobsView extends JPanel {
         }
     }
 
-    private void switchToResult() {
+    private void switchToResult(boolean rerender) {
         setRemoteJobsRefresh(false);
 
         // Initialize selected job details
@@ -350,8 +356,10 @@ public class RemoteJobsView extends JPanel {
         total.setVisible(false);
 
         // Re-render
-        revalidate();
-        repaint();
+        if(rerender) {
+            revalidate();
+            repaint();
+        }
 
         // Start refresh thread
         setSelectedJobRefresh(true);

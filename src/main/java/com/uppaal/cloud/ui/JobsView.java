@@ -100,7 +100,7 @@ public class JobsView extends JPanel implements Callback {
 
             localJobsPanel.setVisible(false);
             remoteJobsPanel.setVisible(true);
-            remoteJobsPanel.refreshView();
+            remoteJobsPanel.refreshView(true);
         } else {
             // Render local component
             setRemoteButton.setSelected(false);

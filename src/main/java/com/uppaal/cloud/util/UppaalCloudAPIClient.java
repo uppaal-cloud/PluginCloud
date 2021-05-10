@@ -12,7 +12,7 @@ public class UppaalCloudAPIClient {
     private Gson gson = new Gson();
     public static final MediaType JSON
             = MediaType.get("application/json; charset=utf-8");
-    public static final String API_URL = "http://uppaal.mywire.org";
+    public static final String API_URL = "https://uppaal.mywire.org";
 
     private OkHttpClient client = new OkHttpClient();
 

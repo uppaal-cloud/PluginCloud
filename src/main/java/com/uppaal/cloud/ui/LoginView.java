@@ -47,6 +47,7 @@ public class LoginView extends JPanel {
         passwordRow.add(new JLabel("Password: "));
         passwordField = new JPasswordField("");
         passwordField.setPreferredSize(new Dimension(128, passwordField.getPreferredSize().height));
+        passwordField.addActionListener(e -> login());
         passwordRow.add(passwordField);
         add(passwordRow);
 
